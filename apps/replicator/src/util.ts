@@ -133,9 +133,18 @@ export function convertProtobufMessageBodyToJson(message: Message): MessageBodyJ
 
   switch (message.data?.type) {
     case MessageType.CAST_ADD: {
-      if (!message.data.castAddBody) throw new Error("Missing castAddBody");
+      if (!message.data.castAddBody) 
+        throw new Error("Missing castAddBody");
       const { embeds, embedsDeprecated, mentions, mentionsPositions, text, parentCastId, parentUrl } =
         message.data.castAddBody;
+      if (embeds.length == 0)
+        throw new Error("No embedds provided");
+      const embUrls = embeds.filter(emb => {
+        const embUrl = (emb.url || "").toLowerCase();
+        return embUrl.indexOf("streamm.xyz/") > 0 || embUrl.indexOf(".mp4") > 0 || embUrl.indexOf(".m3u8") > 0;
+      });
+      if (embUrls.length == 0)
+        throw new Error("No relevant embeds found");
 
       const transformedEmbeds: CastEmbedJson[] = embedsDeprecated?.length
         ? embedsDeprecated.map((url) => ({ url }))
@@ -144,7 +153,7 @@ export function convertProtobufMessageBodyToJson(message: Message): MessageBodyJ
             if (url) return { url };
             throw new AssertionError("Neither castId nor url is defined in embed");
           });
-
+      
       return {
         embeds: transformedEmbeds,
         mentions,
